@@ -1,59 +1,54 @@
-
-var app = {
-    options: {}
-}
-var apidoc = require('apidoc-core')
+const fs = require('fs')
+const path = require('path')
+const apidoc = require('apidoc-core')
+const winston = require('winston');
 const YAML = require('yaml')
-var winston = require('winston');
-const libPkg = require('./package.json');
+
 const apidoc_to_swagger = require('./apidoc_to_swagger');
+const libPkg = require('./package.json');
+
 apidoc.setGeneratorInfos({ name: libPkg.name, time: new Date(), version: libPkg.version, url: libPkg.repository.url })
 
 
-function generateLog() {
-    var log = winston.createLogger({
+function generateLog(options) {
+    return winston.createLogger({
         transports: [
             new (winston.transports.Console)({
-                level: app.options.verbose ? 'verbose' : 'info',
+                level: options.verbose ? 'verbose' : 'info',
                 silent: false,
                 prettyPrint: true,
-                colorize: app.options.color,
+                colorize: options.color,
                 timestamp: false
             }),
         ]
     })
-    app.options.log = log
-    return log
 }
 
 function main(options) {
-
-    app.options = options
-    app.options.verbose && console.log('options', app.options);
-    generateLog()
+    options.verbose && console.log('options', options);
+    const log = generateLog(options)
     const { src, dest, verbose } = options
-    apidoc.setLogger(app.options.log)
+    apidoc.setLogger(log)
 
-    var api = apidoc.parse({ ...app.options, log: app.options.log })
-
+    var api = apidoc.parse({ ...options, log: log })
     if (api === true) {
         console.log('No input data found, check your include/exclude filters');
-    } else if (app.options.parse !== true) {
-        var apidocData = JSON.parse(api.data);
-        var projectData = JSON.parse(api.project);
-
-        const swagger = apidoc_to_swagger.toSwagger(apidocData, projectData)
-
-        api["swaggerData"] = JSON.stringify(swagger, null, 4);
-        createOutputFile(api, app.options.log)
+        return;
     }
+
+    var apidocData = JSON.parse(api.data);
+    var projectData = JSON.parse(api.project);
+
+    const swagger = apidoc_to_swagger.toSwagger(apidocData, projectData)
+
+    api["swaggerData"] = swagger;
+    createOutputFile(api.swaggerData, log, options)
+
+    return swagger;
 }
 
-
-const fs = require('fs')
-const path = require('path')
-function createOutputFile(api, log) {
-    if (app.options.simulate)
+function createOutputFile(swaggerData, log, options) {
+    if (options.simulate)
         log.warn('!!! Simulation !!! No file or dir will be copied or created.');
 
     log.verbose('Creating dir: ' + app.options.dest);
