@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const apidoc = require('apidoc-core')
 const winston = require('winston');
-const YAML = require('yaml')
+const yaml = require('js-yaml')
 
 const apidoc_to_swagger = require('./apidoc_to_swagger');
 const libPkg = require('./package.json');
@@ -61,7 +61,7 @@ function createOutputFile(swaggerData, log, options) {
 
     log.verbose('Writing YAML swagger file: ' + app.options.dest + 'swagger.yaml');
     if (!app.options.simulate)
-        fs.writeFileSync(app.options.dest + './swagger.yaml', YAML.stringify(api.swaggerData));
+        fs.writeFileSync(app.options.dest + './swagger.yaml', yaml.dump(api.swaggerData));
 }
 
 exports.main = main
