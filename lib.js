@@ -51,17 +51,17 @@ function createOutputFile(swaggerData, log, options) {
     if (options.simulate)
         log.warn('!!! Simulation !!! No file or dir will be copied or created.');
 
-    log.verbose('Creating dir: ' + app.options.dest);
-    if (!app.options.simulate)
-        fs.existsSync(app.options.dest) || fs.mkdirSync(app.options.dest);
+    log.verbose('Creating dir: ' + options.dest);
+    if (!options.simulate)
+        fs.existsSync(options.dest) || fs.mkdirSync(options.dest);
 
-    log.verbose('Writing JSON swagger file: ' + app.options.dest + 'swagger.json');
-    if (!app.options.simulate)
-        fs.writeFileSync(app.options.dest + './swagger.json', JSON.stringify(api.swaggerData, null, 4));
+    log.verbose('Writing JSON swagger file: ' + options.dest + 'swagger.json');
+    if (!options.simulate)
+        fs.writeFileSync(options.dest + './swagger.json', JSON.stringify(swaggerData, null, 4));
 
-    log.verbose('Writing YAML swagger file: ' + app.options.dest + 'swagger.yaml');
-    if (!app.options.simulate)
-        fs.writeFileSync(app.options.dest + './swagger.yaml', yaml.dump(api.swaggerData));
+    log.verbose('Writing YAML swagger file: ' + options.dest + 'swagger.yaml');
+    if (!options.simulate)
+        fs.writeFileSync(options.dest + './swagger.yaml', yaml.dump(swaggerData));
 }
 
 exports.main = main
