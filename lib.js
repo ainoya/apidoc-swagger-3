@@ -32,6 +32,11 @@ function main(options) {
     }
 
     var apidocData = JSON.parse(api.data);
+    // Replicate underscoreToSpace handlebar filter from https://github.com/apidoc/apidoc/blob/0.50.5/template/src/hb_helpers.js#L93
+    for (let article of apidocData) {
+        if (article.name)
+            article.name = article.name.replace(/(_+)/g, ' ');
+    }
     var projectData = JSON.parse(api.project);
 
     const swagger = apidoc_to_swagger.toSwagger(apidocData, projectData)
