@@ -4,9 +4,11 @@ on:  # cf. https://github.community/t/how-to-trigger-an-action-on-push-or-pull-r
   push:
     branches:
     - master
+    - prod
   pull_request:
     branches:
     - master
+    - prod
 
 jobs:
   check:
@@ -23,7 +25,7 @@ jobs:
           node-version: '14'
 
       - name: Install ⚙️🔧
-        run:  npm ci
+        run:  npm install
 
       - name: Test ☑🔎
         run:  npm test
