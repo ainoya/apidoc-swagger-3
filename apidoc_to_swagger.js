@@ -51,10 +51,14 @@ function extractPaths(apidocJson) {  // cf. https://swagger.io/specification/#pa
 
         // Surrounds URL parameters with curly brackets -> :email with {email}
         var pathKeys = [];
+        console.log(pattern);
+        console.log(matches);
+        if(matches) {
         for (let j = 1; j < matches.length; j++) {
             var key = matches[j].substr(1);
             url = url.replace(matches[j], "{" + key + "}");
             pathKeys.push(key);
+        }
         }
 
         for (let j = 0; j < verbs.length; j++) {
@@ -112,10 +116,13 @@ function transferApidocParamsToSwaggerBody(apiDocParams, parameterInBody) {
     }
 
     apiDocParams.forEach(i => {
+        console.log('---i---')
+        console.log(i)
         const type = i.type.toLowerCase()
         const key = i.field
         const nestedName = createNestedName(i.field)
-        const { objectName = '', propertyName } = nestedName
+        let { objectName = '', propertyName } = nestedName
+        objectName = objectName.split('.')[0]
 
         if (type.endsWith('object[]')) {
             // if schema(parsed from example) doesn't has this constructure, init
@@ -139,6 +146,12 @@ function transferApidocParamsToSwaggerBody(apiDocParams, parameterInBody) {
             }
         } else if (type === 'object') {
             // if schema(parsed from example) doesn't has this constructure, init
+            console.log('---type object mountPlaces---');
+            console.log(mountPlaces);
+            console.log('---type object objectName---');
+            console.log(objectName);
+            console.log('---type object nestedName---');
+            console.log(nestedName);
             if (!mountPlaces[objectName]['properties'][propertyName]) {
                 mountPlaces[objectName]['properties'][propertyName] = { type: 'object', properties: {}, required: [] }
             }
@@ -146,11 +159,18 @@ function transferApidocParamsToSwaggerBody(apiDocParams, parameterInBody) {
             // new mount point
             mountPlaces[key] = mountPlaces[objectName]['properties'][propertyName]
         } else {
+            console.log('---mountPlaces---');
+            console.log(mountPlaces);
+            console.log('---objectName---');
+            console.log(objectName);
+            console.log('---nestedName---');
+            console.log(nestedName);
             mountPlaces[objectName]['properties'][propertyName] = {
                 type,
                 description: i.description,
                 default: i.defaultValue,
             }
+            console.log('---END---');
         }
         if (!i.optional) {
             // generate-schema forget init [required]
@@ -273,18 +293,9 @@ function mountResponseSpecSchema(verb, responses) {
 
 function safeParseJson(content) {
     // such as  'HTTP/1.1 200 OK\n' +  '{\n' + ...
-
-    let startingIndex = 0;
-    for (let i = 0; i < content.length; i++) {
-        const character = content[i];
-        if (character === '{' || character === '[') {
-            startingIndex = i;
-            break;
-        }
-    }
-
-    const mayCodeString = content.slice(0, startingIndex)
-    const mayContentString = content.slice(startingIndex)
+    const leftCurlyBraceIndex = content.indexOf('{')
+    const mayCodeString = content.slice(0, leftCurlyBraceIndex)
+    const mayContentString = content.slice(leftCurlyBraceIndex)
 
     const mayCodeSplit = mayCodeString.trim().split(' ')
     const code = mayCodeSplit.length === 3 ? parseInt(mayCodeSplit[1]) : 200
