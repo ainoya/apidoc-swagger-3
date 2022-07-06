@@ -25,9 +25,10 @@
     },
     "license": "ISC",
     "dependencies": {
-        "apidoc-core": "^0.15.0",
+        "apidoc": "^0.50.5",
         "commander": "^6.0.0",
         "generate-schema": "^2.6.0",
+        "js-yaml": "^4.1.0",
         "lodash": "^4.17.20",
         "path-to-regexp": "^6.1.0",
         "winston": "^3.3.3"
