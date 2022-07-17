@@ -5,7 +5,8 @@ const GenerateSchema = require('generate-schema')
 
 
 var swagger = {
-    openapi: "3.0.0",
+    // openapi: "3.0.0",
+    swagger: "2.0",
     info: {},
     paths: {}
 };
@@ -118,7 +119,16 @@ function transferApidocParamsToSwaggerBody(apiDocParams, parameterInBody) {
     apiDocParams.forEach(i => {
         console.log('---i---')
         console.log(i)
-        const type = i.type.toLowerCase()
+        let type = i.type.toLowerCase()
+        if (type === 'date' || type === 'datetime' || type === 'bigdecimal' || type === 'html' || type === 'localdate') {
+            type = 'string'
+        } else if (type === 'int') {
+            type = 'integer'
+        } else if (type === 'double') {
+            type = 'number'
+        } else if (type === 'amendment' || type === 'contract' || type === 'planparams') {
+            type = 'object'
+        }
         const key = i.field
         const nestedName = createNestedName(i.field)
         let { objectName = '', propertyName } = nestedName
@@ -127,7 +137,7 @@ function transferApidocParamsToSwaggerBody(apiDocParams, parameterInBody) {
         if (type.endsWith('object[]')) {
             // if schema(parsed from example) doesn't has this constructure, init
             if (!mountPlaces[objectName]['properties'][propertyName]) {
-                mountPlaces[objectName]['properties'][propertyName] = { type: 'array', items: { type: 'object', properties: {}, required: [] } }
+                mountPlaces[objectName]['properties'][propertyName] = { type: 'array', items: { type: 'object', properties: {}, } }
             }
 
             // new mount point
@@ -135,9 +145,16 @@ function transferApidocParamsToSwaggerBody(apiDocParams, parameterInBody) {
         } else if (type.endsWith('[]')) {
             // if schema(parsed from example) doesn't has this constructure, init
             if (!mountPlaces[objectName]['properties'][propertyName]) {
+                let itemsType = type.slice(0, -2);
+                if(itemsType === 'date') {
+                    itemsType = 'string'
+                }
+                if(itemsType === 'amendment' || itemsType === 'cancelcontractitemparams' || itemsType === 'planparams' || itemsType === 'addonparams') {
+                    itemsType = 'object'
+                }
                 mountPlaces[objectName]['properties'][propertyName] = {
                     items: {
-                        type: type.slice(0, -2), description: i.description,
+                        type: itemsType, description: i.description,
                         // default: i.defaultValue,
                         example: i.defaultValue
                     },
@@ -153,7 +170,7 @@ function transferApidocParamsToSwaggerBody(apiDocParams, parameterInBody) {
             console.log('---type object nestedName---');
             console.log(nestedName);
             if (!mountPlaces[objectName]['properties'][propertyName]) {
-                mountPlaces[objectName]['properties'][propertyName] = { type: 'object', properties: {}, required: [] }
+                mountPlaces[objectName]['properties'][propertyName] = { type: 'object', properties: {},  }
             }
 
             // new mount point
@@ -179,6 +196,9 @@ function transferApidocParamsToSwaggerBody(apiDocParams, parameterInBody) {
             } else {
                 mountPlaces[objectName]['required'] = [propertyName]
             }
+        }
+        if (mountPlaces[objectName]['required']) {
+            mountPlaces[objectName]['required'] = _.uniq(mountPlaces[objectName]['required'])
         }
     })
 
@@ -237,6 +257,7 @@ function generateParameters(verb) {
 function generateRequestBody(verb, mixedBody) {
     const bodyParameter = {
         in: 'body',
+        name: 'body',
         schema: {
             properties: {},
             type: 'object',
@@ -248,6 +269,7 @@ function generateRequestBody(verb, mixedBody) {
         for (const example of verb.parameter.examples) {
             const { code, json } = safeParseJson(example.content)
             const schema = GenerateSchema.json(example.title, json)
+            delete(schema.$schema)
             bodyParameter.schema = schema
             bodyParameter.description = example.title
         }
@@ -262,6 +284,7 @@ function generateResponses(verb) {
     const success = verb.success
     const responses = {
         200: {
+            description: '',
             schema: {
                 properties: {},
                 type: 'object',
@@ -273,6 +296,7 @@ function generateResponses(verb) {
         for (const example of success.examples) {
             const { code, json } = safeParseJson(example.content)
             const schema = GenerateSchema.json(example.title, json)
+            delete(schema.$schema)
             responses[code] = { schema, description: example.title }
         }
 
